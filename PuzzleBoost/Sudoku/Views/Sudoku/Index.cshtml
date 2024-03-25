@@ -1,0 +1,183 @@
+﻿@model SharedModels.SudokuBoardViewModel
+@{
+    ViewData["Title"] = "Home Page";
+}
+
+<div class="container">
+    <div class="row">
+        <div class="col">
+            <div id="sudokuInfo" style="width:100%">Sudoku ID: @Model.Id | Difficulty = @Model.Difficulty</div>
+            <canvas id="sudokuCanvas" width="500" height="500"></canvas>
+        </div>
+        <div class="col">
+            <div id="numericKeyboardContainer">
+                <table id="numericKeyboard" style="width:100%; height: 75%;">
+                    <tr>
+                        <td><input type="button" value="1" onclick="insertNumber(1)" class="btn btn-primary" id="numericButton"></td>
+                        <td><input type="button" value="2" onclick="insertNumber(2)" class="btn btn-primary" id="numericButton"></td>
+                        <td><input type="button" value="3" onclick="insertNumber(3)" class="btn btn-primary" id="numericButton"></td>
+                    </tr>
+                    <tr>
+                        <td><input type="button" value="4" onclick="insertNumber(4)" class="btn btn-primary" id="numericButton"></td>
+                        <td><input type="button" value="5" onclick="insertNumber(5)" class="btn btn-primary" id="numericButton"></td>
+                        <td><input type="button" value="6" onclick="insertNumber(6)" class="btn btn-primary" id="numericButton"></td>
+                    </tr>
+                    <tr>
+                        <td><input type="button" value="7" onclick="insertNumber(7)" class="btn btn-primary" id="numericButton"></td>
+                        <td><input type="button" value="8" onclick="insertNumber(8)" class="btn btn-primary" id="numericButton"></td>
+                        <td><input type="button" value="9" onclick="insertNumber(9)" class="btn btn-primary" id="numericButton"></td>
+                    </tr>
+                </table>
+                <table id="actionKeyboard" style="width:100%; height: 25%;">
+                    <tr>
+                        <td><input type="button" value="Clear" onclick="clearCell()" class="btn btn-primary" id="actionButton"></td>
+                        <td><input type="button" value="Cancel" onclick="cancelSelection()" class="btn btn-primary" id="actionButton"></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<script>
+    var canvas = document.getElementById('sudokuCanvas');
+    var ctx = canvas.getContext('2d');
+
+    var cellSize = canvas.width / 9;
+
+    var boardStart = @Html.Raw(Json.Serialize(Model.Board));
+    var board = @Html.Raw(Json.Serialize(Model.Board));
+
+    var selectedCell = { x: -1, y: -1 };
+
+    canvas.addEventListener('click', function (event) {
+        var x = Math.floor(event.offsetX / cellSize);
+        var y = Math.floor(event.offsetY / cellSize);
+
+        selectedCell = { x: x, y: y };
+        drawSudoku();
+    });
+
+    function insertNumber(number) {
+        if (selectedCell.x !== -1 && selectedCell.y !== -1 && boardStart[selectedCell.y][selectedCell.x] === 0) {
+            board[selectedCell.y][selectedCell.x] = number;
+            drawSudoku();
+        }
+    }
+
+    function clearCell() {
+        if (selectedCell.x !== -1 && selectedCell.y !== -1 && boardStart[selectedCell.y][selectedCell.x] === 0) {
+            board[selectedCell.y][selectedCell.x] = 0;
+            drawSudoku();
+        }
+    }
+
+
+
+    function cancelSelection() {
+        selectedCell = { x: -1, y: -1 };
+    }
+
+
+    function drawGrid() {
+
+        if (selectedCell.x !== -1 && selectedCell.y !== -1) {
+            ctx.fillStyle = 'lightblue'; 
+            ctx.fillRect(selectedCell.x * cellSize, selectedCell.y * cellSize, cellSize, cellSize);
+        }
+
+        ctx.beginPath();
+        for (var x = 0; x <= canvas.width; x += cellSize) {
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, canvas.height);
+        }
+        for (var y = 0; y <= canvas.height; y += cellSize) {
+            ctx.moveTo(0, y);
+            ctx.lineTo(canvas.width, y);
+        }
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = 'black';
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.lineWidth = 4;
+        for (var i = 0; i <= 9; i += 3) {
+            ctx.moveTo(i * cellSize, 0);
+            ctx.lineTo(i * cellSize, canvas.height);
+            ctx.moveTo(0, i * cellSize);
+            ctx.lineTo(canvas.width, i * cellSize);
+        }
+        ctx.strokeStyle = 'black';
+        ctx.stroke();
+
+    }
+
+
+
+    function drawNumbers() {
+        ctx.fillStyle = 'black';
+        ctx.font = '40px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        for (var i = 0; i < 9; i++) {
+            for (var j = 0; j < 9; j++) {
+                if (board[i][j] !== 0) {
+                    if (boardStart[i][j] !== 0) {
+                        ctx.fillStyle = 'black';
+                    } else {
+                        ctx.fillStyle = 'blue';
+                    }
+                    ctx.fillText(board[i][j], j * cellSize + cellSize / 2, i * cellSize + cellSize / 2);
+                }
+            }
+        }
+    }
+
+    function clearCanvas() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function drawSudoku() {
+        clearCanvas();
+        drawGrid();
+        drawNumbers();
+    }
+
+    drawSudoku();
+</script>
+<style>
+    #numericKeyboardContainer
+    {
+        width:100%;
+        height:100%;
+    }
+    /* #numericKeyboardContainer #numericButton {
+        padding: 20px;
+        position: relative;
+        width: 100%;
+        height: 0;
+        padding-top: 40%;
+        padding-bottom: 50%;
+
+        font-size: 50px;
+    } */
+    #numericButton {
+        aspect-ratio: 1 / 1;
+        width:100%;
+        font-size: 50px;
+    }
+
+    #actionButton {
+        /* aspect-ratio: 2 / 1; */
+        width:100%;
+        min-height:100%;
+        font-size: 50px;
+    }
+
+    /* #numericButton
+    {
+        width: 100%;
+    } */
+</style>
