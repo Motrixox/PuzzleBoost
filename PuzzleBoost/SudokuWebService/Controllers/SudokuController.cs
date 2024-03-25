@@ -30,7 +30,8 @@ namespace SudokuWebService.Controllers
         [HttpGet]
         public async Task<IActionResult> GetRandomSudoku()
         {
-            var sudoku = await _sudokuRepository.GetSingleAsync(Random.Shared.Next(3_000_000));
+            //var sudoku = await _sudokuRepository.GetSingleAsync(Random.Shared.Next(3_000_000));
+            var sudoku = await _sudokuRepository.GetSingleAsync(Random.Shared.Next(1,19894));
 
             if (sudoku == null)
             {
@@ -77,7 +78,8 @@ namespace SudokuWebService.Controllers
             var list = _sudokuRepository.GetAllRecords();
 
             //var random = Random.Shared.Next(0, list.Count()); // this is how it should look like in theory, but setting it manually to 3m saves 0,5s every request
-            var random = Random.Shared.Next(0, 3_000_000);
+            //var random = Random.Shared.Next(0, 3_000_000);
+            var random = Random.Shared.Next(0, 19894);
 
             IQueryable<Sudoku> listFiltered;
 
