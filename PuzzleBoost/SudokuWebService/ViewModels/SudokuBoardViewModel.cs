@@ -1,4 +1,4 @@
-﻿namespace SharedModels
+﻿namespace SudokuWebService.ViewModels
 {
     public class SudokuBoardViewModel
     {

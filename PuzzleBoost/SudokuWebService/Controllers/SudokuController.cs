@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SudokuWebService.Models;
 using SudokuWebService.Services;
-using SharedModels;
+using SudokuWebService.ViewModels;
 
 namespace SudokuWebService.Controllers
 {
