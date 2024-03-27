@@ -7,6 +7,10 @@
     "mongo": {
       "type": "mongodb",
       "connectionId": "MongoConnectionString"
+    },
+    "mssql1": {
+      "ignored": "true",
+      "type": "mssql"
     }
   }
 }
