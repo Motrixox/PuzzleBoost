@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using MongoDB.Driver;
 using SudokuWebService.Data;
 using SudokuWebService.Extensions;
 using SudokuWebService.Models;
@@ -9,13 +10,13 @@ namespace SudokuWebService.Services
 {
     public class RepositoryService<T> : IRepositoryService<T> where T : class, IEntity
     {
-        protected ApplicationDbContext _context;
-        protected DbSet<T> _set;
+        protected MongoDbContext<T> _context;
+        protected IMongoCollection<T> _collection;
 
-        public RepositoryService(ApplicationDbContext context)
+        public RepositoryService(MongoDbContext<T> context)
         {
             _context = context;
-            _set = _context.Set<T>();
+            _collection = context._collection;
         }
 
         public async Task<ServiceResult> AddAsync(T entity)
@@ -23,8 +24,7 @@ namespace SudokuWebService.Services
             ServiceResult result = new ServiceResult();
             try
             {
-                _set.Add(entity);
-                await SaveAsync();
+                await _collection.InsertOneAsync(entity);
             }
             catch (Exception e)
             {
@@ -40,8 +40,7 @@ namespace SudokuWebService.Services
             ServiceResult result = new ServiceResult();
             try
             {
-                _set.Remove(entity);
-                await SaveAsync();
+                await _collection.DeleteOneAsync(x => x.id == entity.id);
             }
             catch (Exception e)
             {
@@ -57,8 +56,7 @@ namespace SudokuWebService.Services
             ServiceResult result = new ServiceResult();
             try
             {
-                _context.Entry(entity).State = EntityState.Modified;
-                await SaveAsync();
+                await _collection.ReplaceOneAsync(x => x.id == entity.id, entity);
             }
             catch (Exception e)
             {
@@ -71,34 +69,17 @@ namespace SudokuWebService.Services
 
         public async Task<T?> GetSingleAsync(int id)
         {
-            return await _set.FirstOrDefaultAsync(r => r.Id == id);
+            return await _collection.Find(x => x.id == id).FirstOrDefaultAsync();
         }
 
-        public IQueryable<T> FindBy(Expression<Func<T, bool>> predicate)
+        public async Task<T?> FindBy(Expression<Func<T, bool>> predicate)
         {
-            IQueryable<T> query = _set.Where(predicate);
-            return query;
+            return await _collection.Find(predicate).FirstOrDefaultAsync();
         }
 
-        public IQueryable<T> GetAllRecords()
+        public IMongoCollection<T> GetAllRecords()
         {
-            return _set;
-        }
-
-        private async Task<ServiceResult> SaveAsync()
-        {
-            ServiceResult result = new ServiceResult();
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (Exception e)
-            {
-                result.Result = ServiceResultStatus.Error;
-                result.Messages.Add(e.Message);
-            }
-
-            return result;
+            return _collection;
         }
     }
 
