@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using MongoDB.Driver;
 using SudokuWebService.Models;
 using SudokuWebService.Services;
 using SudokuWebService.ViewModels;
@@ -30,8 +31,7 @@ namespace SudokuWebService.Controllers
         [HttpGet]
         public async Task<IActionResult> GetRandomSudoku()
         {
-            //var sudoku = await _sudokuRepository.GetSingleAsync(Random.Shared.Next(3_000_000));
-            var sudoku = await _sudokuRepository.GetSingleAsync(Random.Shared.Next(1,19894));
+            var sudoku = await _sudokuRepository.GetSingleAsync(Random.Shared.Next(1, 1428000));
 
             if (sudoku == null)
             {
@@ -40,10 +40,10 @@ namespace SudokuWebService.Controllers
 
             var model = new SudokuBoardViewModel
             {
-                Id = sudoku.Id,
-                Board = _sudokuConverter.ConvertStringToArray(sudoku.Puzzle),
-                Solution = _sudokuConverter.ConvertStringToArray(sudoku.Solution),
-                Difficulty = sudoku.Difficulty
+                Id = sudoku.id,
+                Board = _sudokuConverter.ConvertStringToArray(sudoku.puzzle),
+                Solution = _sudokuConverter.ConvertStringToArray(sudoku.solution),
+                Difficulty = sudoku.difficulty
             };
 
             return Ok(model);
@@ -62,10 +62,10 @@ namespace SudokuWebService.Controllers
 
             var model = new SudokuBoardViewModel
             {
-                Id = sudoku.Id,
-                Board = _sudokuConverter.ConvertStringToArray(sudoku.Puzzle),
-                Solution = _sudokuConverter.ConvertStringToArray(sudoku.Solution),
-                Difficulty = sudoku.Difficulty
+                Id = sudoku.id,
+                Board = _sudokuConverter.ConvertStringToArray(sudoku.puzzle),
+                Solution = _sudokuConverter.ConvertStringToArray(sudoku.solution),
+                Difficulty = sudoku.difficulty
             };
 
             return Ok(model);
@@ -77,38 +77,40 @@ namespace SudokuWebService.Controllers
         {
             var list = _sudokuRepository.GetAllRecords();
 
-            //var random = Random.Shared.Next(0, list.Count()); // this is how it should look like in theory, but setting it manually to 3m saves 0,5s every request
-            //var random = Random.Shared.Next(0, 3_000_000);
-            var random = Random.Shared.Next(0, 19894);
-
-            IQueryable<Sudoku> listFiltered;
+            IFindFluent<Sudoku, Sudoku> listFiltered;
+            int skipMaxNumber; // number of sudoku boards of chosen level stored in database
 
             if (level == 1)
             {
-                listFiltered = list.Where(x => x.Difficulty == 0);
+                listFiltered = list.Find(x => x.difficulty == 0);
+                skipMaxNumber = 615989; // arbitrary number set to improve performance
             }
             else if (level == 2)
             {
-                listFiltered = list.Where(x => x.Difficulty > 0 && x.Difficulty <= 2.0);
+                listFiltered = list.Find(x => x.difficulty > 0 && x.difficulty <= 2.0);
+                skipMaxNumber = 421680;
             }
             else if (level == 3)
             {
-                listFiltered = list.Where(x => x.Difficulty > 2.0 && x.Difficulty <= 4.0);
+                listFiltered = list.Find(x => x.difficulty > 2.0 && x.difficulty <= 4.0);
+                skipMaxNumber = 359204;
             }
             else if (level == 4)
             {
-                listFiltered = list.Where(x => x.Difficulty > 4.0 && x.Difficulty <= 6.0);
+                listFiltered = list.Find(x => x.difficulty > 4.0 && x.difficulty <= 6.0);
+                skipMaxNumber = 30634;
             }
             else if (level == 5)
             {
-                listFiltered = list.Where(x => x.Difficulty > 6.0);
+                listFiltered = list.Find(x => x.difficulty > 6.0);
+                skipMaxNumber = 492;
             }
             else
             {
                 return BadRequest("Invalid level number");
             }
 
-            Sudoku? sudoku = await listFiltered.OrderBy(x => Math.Abs(random - x.Id)).FirstOrDefaultAsync();
+            Sudoku ? sudoku = await listFiltered.Skip(Random.Shared.Next(0, skipMaxNumber)).FirstOrDefaultAsync();
 
             if (sudoku == null)
             {
@@ -117,10 +119,10 @@ namespace SudokuWebService.Controllers
 
             var model = new SudokuBoardViewModel
             {
-                Id = sudoku.Id,
-                Board = _sudokuConverter.ConvertStringToArray(sudoku.Puzzle),
-                Solution = _sudokuConverter.ConvertStringToArray(sudoku.Solution),
-                Difficulty = sudoku.Difficulty
+                Id = sudoku.id,
+                Board = _sudokuConverter.ConvertStringToArray(sudoku.puzzle),
+                Solution = _sudokuConverter.ConvertStringToArray(sudoku.solution),
+                Difficulty = sudoku.difficulty
             };
 
             return Ok(model);
